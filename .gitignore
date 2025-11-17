@@ -1,0 +1,18 @@
+# Ignore build output
+**/bin/
+**/obj/
+
+# Node.js dependencies
+node_modules/
+
+# Vite build output
+dist/
+
+# OS files
+.DS_Store
+
+# Visual Studio files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
