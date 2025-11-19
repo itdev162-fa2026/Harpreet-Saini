@@ -1,15 +1,28 @@
+using Domain;
 using Microsoft.EntityFrameworkCore;
-using Domain; // Make sure you have this to reference Product class
 
-namespace Persistence
+namespace Persistence;
+
+public class DataContext : DbContext
 {
-    public class DataContext : DbContext
+    // Add this constructor to accept options from AddDbContext
+    public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
-        public DataContext(DbContextOptions<DataContext> options) : base(options)
-        {
-        }
+    }
 
-        // Add this line to include your Product entity in EF Core context
-        public DbSet<Product> Products { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<Order> Orders { get; set; }
+    public DbSet<OrderItem> OrderItems { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        // Configure Order → OrderItems relationship
+        modelBuilder.Entity<Order>()
+            .HasMany(o => o.OrderItems)
+            .WithOne(oi => oi.Order)
+            .HasForeignKey(oi => oi.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
