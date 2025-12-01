@@ -1,25 +1,35 @@
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add controllers (enables MVC-style routing for APIs)
-builder.Services.AddControllers();  // Add this line to enable API controllers
+// ---------------------------
+// Stripe Configuration
+// ---------------------------
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
-// Add Swagger (for API documentation)
+// ---------------------------
+// Add Services
+// ---------------------------
+
+// Add controllers
+builder.Services.AddControllers();
+
+// Add Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Get connection string from appsettings.json and configure DbContext
+// Configure DbContext with SQLite using absolute path from appsettings.json
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));  // Reads connection string from appsettings.json
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add CORS for cross-origin requests
+// Configure CORS for frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactCorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")  // Replace with your frontend URL if different
+        policy.WithOrigins("http://localhost:5173")  // Replace with your frontend URL
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -27,22 +37,20 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Enable Swagger UI in development
+// ---------------------------
+// Middleware
+// ---------------------------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Use CORS policy before other middlewares
 app.UseCors("ReactCorsPolicy");
+app.UseHttpsRedirection();
+app.UseAuthorization();
 
-app.UseHttpsRedirection();  // Redirect HTTP to HTTPS
+// Map controllers
+app.MapControllers();
 
-app.UseAuthorization();  // Add this if you're using authorization
-
-// Map API controllers to routes
-app.MapControllers();  // This enables attribute routing like [Route("products")]
-
-// Run the application
-app.Run();  // Starts the app
+app.Run();
