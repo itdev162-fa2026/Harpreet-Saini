@@ -1,10 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Persistence;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add controllers (enables MVC-style routing for APIs)
-builder.Services.AddControllers();  // Add this line to enable API controllers
+builder.Services.AddControllers();
 
 // Add Swagger (for API documentation)
 builder.Services.AddEndpointsApiExplorer();
@@ -12,7 +13,11 @@ builder.Services.AddSwaggerGen();
 
 // Get connection string from appsettings.json and configure DbContext
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));  // Reads connection string from appsettings.json
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Configure Stripe
+builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
+StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
 // Add CORS for cross-origin requests
 builder.Services.AddCors(options =>
@@ -42,7 +47,14 @@ app.UseHttpsRedirection();  // Redirect HTTP to HTTPS
 app.UseAuthorization();  // Add this if you're using authorization
 
 // Map API controllers to routes
-app.MapControllers();  // This enables attribute routing like [Route("products")]
+app.MapControllers();  // This enables attribute routing like [Route("api/[controller]")]
 
 // Run the application
 app.Run();  // Starts the app
+
+// Stripe settings class
+public class StripeSettings
+{
+    public string SecretKey { get; set; }
+    public string PublishableKey { get; set; }
+}

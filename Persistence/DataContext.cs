@@ -1,15 +1,16 @@
 using Microsoft.EntityFrameworkCore;
-using Domain; // Make sure you have this to reference Product class
+using Domain;
 
 namespace Persistence
 {
     public class DataContext : DbContext
     {
-        public DataContext(DbContextOptions<DataContext> options) : base(options)
-        {
-        }
+        public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
-        // Add this line to include your Product entity in EF Core context
-        public DbSet<Product> Products { get; set; }
+        public DbSet<Product> Products { get; set; } = null!;
+        public DbSet<Order> Orders { get; set; } = null!;
+        public DbSet<OrderItem> OrderItems { get; set; } = null!;
+        
+        // No OnConfiguring needed because connection comes from appsettings.json
     }
 }

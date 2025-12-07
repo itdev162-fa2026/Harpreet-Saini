@@ -16,3 +16,11 @@ dist/
 *.user
 *.userosscache
 *.sln.docstates
+
+# Development settings with secrets
+appsettings.Development.json
+
+# SQLite database files
+*.db
+*.db-shm
+*.db-wal
