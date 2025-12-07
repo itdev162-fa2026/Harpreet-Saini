@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Domain;
 using Persistence;
+using Microsoft.EntityFrameworkCore;  // Add this for async if needed later
 
 namespace API.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]  
     public class ProductsController : ControllerBase
     {
         private readonly DataContext _context;
@@ -35,14 +36,14 @@ namespace API.Controllers
             return Ok(product);
         }
 
-        // POST: Create new product with validation and detailed error reporting
+        // POST: Create new product
         [HttpPost]
         public ActionResult<Product> CreateProduct(Product product)
         {
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                              .Select(e => e.ErrorMessage);
+                                          .Select(e => e.ErrorMessage);
                 return UnprocessableEntity(new { Errors = errors });
             }
 
@@ -55,14 +56,14 @@ namespace API.Controllers
             return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
         }
 
-        // PUT: Update product with validation and detailed error reporting
+        // PUT: Update product
         [HttpPut("{id}")]
         public ActionResult<Product> UpdateProduct(int id, Product product)
         {
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                              .Select(e => e.ErrorMessage);
+                                          .Select(e => e.ErrorMessage);
                 return UnprocessableEntity(new { Errors = errors });
             }
 
@@ -101,7 +102,7 @@ namespace API.Controllers
             return NoContent();
         }
 
-        // SEARCH endpoint with filtering and sorting
+        // SEARCH endpoint
         [HttpGet("search")]
         public ActionResult<IEnumerable<Product>> SearchProducts(
             [FromQuery] string? name = null,
@@ -146,15 +147,12 @@ namespace API.Controllers
                 "price" => sortOrder.ToLower() == "desc"
                     ? products.OrderByDescending(p => p.Price).ToList()
                     : products.OrderBy(p => p.Price).ToList(),
-
                 "created" => sortOrder.ToLower() == "desc"
                     ? products.OrderByDescending(p => p.CreatedDate).ToList()
                     : products.OrderBy(p => p.CreatedDate).ToList(),
-
                 "stock" => sortOrder.ToLower() == "desc"
                     ? products.OrderByDescending(p => p.CurrentStock).ToList()
                     : products.OrderBy(p => p.CurrentStock).ToList(),
-
                 _ => sortOrder.ToLower() == "desc"
                     ? products.OrderByDescending(p => p.Name).ToList()
                     : products.OrderBy(p => p.Name).ToList()

@@ -1,60 +1,70 @@
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 using Stripe;
+using Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add controllers (enables MVC-style routing for APIs)
+// Add controllers
 builder.Services.AddControllers();
 
-// Add Swagger (for API documentation)
+// Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Get connection string from appsettings.json and configure DbContext
+// Database
 builder.Services.AddDbContext<DataContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configure Stripe
+// Stripe
 builder.Services.Configure<StripeSettings>(builder.Configuration.GetSection("Stripe"));
 StripeConfiguration.ApiKey = builder.Configuration["Stripe:SecretKey"];
 
-// Add CORS for cross-origin requests
+// 🚀 FIXED CORS - ALL LOCALHOST PORTS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactCorsPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")  // Replace with your frontend URL if different
+        policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")  // ✅ ALL ports!
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-// Enable Swagger UI in development
+// 🚀 Create database
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<DataContext>();
+    
+    // Delete old DB if exists
+    if (System.IO.File.Exists("app.db"))
+        System.IO.File.Delete("app.db");
+    
+    context.Database.EnsureCreated();
+    Console.WriteLine("✅ Database & Products table created!");
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Use CORS policy before other middlewares
+// 🚀 CRITICAL: CORS FIRST
 app.UseCors("ReactCorsPolicy");
 
-app.UseHttpsRedirection();  // Redirect HTTP to HTTPS
+app.UseHttpsRedirection();
+app.UseAuthorization();
 
-app.UseAuthorization();  // Add this if you're using authorization
+app.MapControllers();
 
-// Map API controllers to routes
-app.MapControllers();  // This enables attribute routing like [Route("api/[controller]")]
+app.Run();
 
-// Run the application
-app.Run();  // Starts the app
-
-// Stripe settings class
 public class StripeSettings
 {
-    public string SecretKey { get; set; }
-    public string PublishableKey { get; set; }
+    public string? SecretKey { get; set; }
+    public string? PublishableKey { get; set; }
 }
